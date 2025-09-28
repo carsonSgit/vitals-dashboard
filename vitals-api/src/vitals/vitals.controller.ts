@@ -7,27 +7,17 @@ export class VitalsController {
     constructor(private readonly vitalsService: VitalsService) {}
 
     @Get()
-    findAll() {
-        return this.vitalsService.findAll();
+    findAllByPatientId(@Param('patientId') patientId: string) {
+        return this.vitalsService.findAllByPatientId(patientId);
     }
 
     @Get(':id')
-    findOne(@Param('id') id: string) {
-        return this.vitalsService.findOne(id);
+    findLatestByPatientId(@Param('patientId') patientId: string) {
+        return this.vitalsService.findLatestByPatientId(patientId);
     }
     
     @Post()
     create(@Body() createVitalDto: VitalEntity) {
         return this.vitalsService.create(createVitalDto);
-    }
-
-    @Put(':id')
-    update(@Param('id') id: string, @Body() updateVitalDto: VitalEntity) {
-        return this.vitalsService.update(id, updateVitalDto);
-    }
-
-    @Delete(':id')
-    remove(@Param('id') id: string) {
-        return this.vitalsService.remove(id);
     }
 }

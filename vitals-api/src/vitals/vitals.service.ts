@@ -2,33 +2,33 @@ import { Injectable } from '@nestjs/common';
 import { VitalEntity } from './vitals.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
 
 @Injectable()
 export class VitalsService {
     constructor(
         @InjectRepository(VitalEntity)
         private readonly vitalsRepository: Repository<VitalEntity>,
+        private readonly amqpConnection: AmqpConnection,
     ) {}
 
-    create(vital: Partial<VitalEntity>) {
+    async create(vital: Partial<VitalEntity>) {
         const newVital = this.vitalsRepository.create(vital);
-        return this.vitalsRepository.save(newVital);
+        const savedVital = await this.vitalsRepository.save(newVital);
+
+        console.log('Publishing vital to RabbitMQ:', savedVital);
+        this.amqpConnection.publish('vitals_exchange', 'vitals.created', savedVital);
+        console.log('Published to vitals_exchange with routing key: vitals.created');
+
+        return savedVital;
     }
 
-    findAll() {
-        return this.vitalsRepository.find();
+    findAllByPatientId(patientId: string) {
+        return this.vitalsRepository.find({ where: { patient_id: patientId }});
     }
 
-    findOne(id: string) {
-        return this.vitalsRepository.findOne({ where: { id }});
-    }
-
-    update(id: string, vital: Partial<VitalEntity>) {
-        return this.vitalsRepository.save({ ...vital, id });
-    }
-    
-    remove(id: string) {
-        return this.vitalsRepository.delete(id);
+    findLatestByPatientId(patientId: string) {
+        return this.vitalsRepository.findOne({ where: { patient_id: patientId }, order: { created_at: 'DESC' }});
     }
 
 }
